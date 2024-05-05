@@ -1,0 +1,96 @@
+apiVersion: v1         # Creating new namespace 
+kind: Namespace
+metadata: 
+ name: darsh
+---
+apiVersion: v1          #creating pods
+kind: Pod
+metadata:
+  name: nginx-pod
+  labels:
+    app: nginx          # Adding labels to match the selector in the Service
+  namespace: darsh
+spec:
+  containers:
+  - name: nginx-container
+    image: nginx
+    ports:
+    - containerPort: 80
+---
+apiVersion: v1          # creating service
+kind: Service
+metadata:
+  name: nginx-service
+  namespace: darsh
+spec:
+  type: NodePort
+  selector:
+    app: nginx          # Selecting pods with the 'app: nginx' label
+  ports:
+  - name: htpp
+    protocol: TCP
+    port: 80
+    targetPort: 80
+  type: NodePort
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-app-lb-service
+  namespace: darsh
+spec:
+  selector:
+    app: nginx
+  ports:
+  - name: http
+    port: 80
+    targetPort: 80
+    protocol: TCP
+  type: LoadBalancer       # Exposeing port on LoadBalancer
+---
+apiVersion: apps/v1
+kind: ReplicaSet           #  Creating ReplicaSet
+metadata:
+  name: my-rs
+  namespace: darsh
+spec: 
+  replicas: 3
+  selector:
+    matchExpressions:
+      - key: "app"
+        operator: "In"
+        values: ["cbz-app", "my-app"]
+  template: 
+    metadata: 
+      namespace: darsh
+      labels:
+        app: cbz-app 
+    spec:
+      containers:
+      - name: my-pod-container 
+        image: nginx
+        ports:
+          - name: http
+            protocol: TCP
+            containerPort: 80
+--
+apiVersion: v1
+kind: ReplicationController     # Creating Replication Controller
+metadata:
+  name: my-rc
+spec:
+  replicas: 3
+  selector:
+    app: my-app
+  template:
+    metadata:
+      labels:
+        app: my-app
+    spec:
+      containers:
+        - name: my-pod-container
+          image: nginx
+          ports:
+          - name: http
+            containerPort: 80
+            protocol: TCP
